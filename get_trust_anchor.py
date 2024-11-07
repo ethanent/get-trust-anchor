@@ -171,9 +171,9 @@ def extract_ksks_from_trust_anchors(valid_trust_anchors):
     """Extract and return the KSKs from the parsed trust anchors."""
     print("Extracting KSKs from trust anchor...")
     ksks = []
-    for (i, anchor) in enumerate(valid_trust_anchors):
+    for anchor in valid_trust_anchors:
         if not "PublicKey" in anchor or not "Flags" in anchor:
-            print("Trust anchor {} does not include both PublicKey and Flags values.".format(i))
+            print("Trust anchor {} does not include both PublicKey and Flags values.".format(anchor["original_index"]))
             continue
         ksks.append({'f': anchor["Flags"], 'p': 3, 'a': anchor["Algorithm"], 'k': anchor["PublicKey"]})
     return ksks
@@ -270,7 +270,7 @@ def extract_trust_anchors_from_xml(trust_anchor_xml):
     trust_anchors = []  # Global list of dicts that is taken from the XML file
     # Collect the values for the KeyDigest subelements and attributes
     for (count, this_digest_element) in enumerate(digest_elements):
-        digest_value_dict = {}
+        digest_value_dict = {"original_index": count}
         for this_subelement in ["KeyTag", "Algorithm", "DigestType", "Digest"]:
             try:
                 this_key_tag_text = (this_digest_element.find(this_subelement)).text
@@ -351,10 +351,10 @@ def get_matching_ksk(ksk_records, valid_trust_anchors):
         except:
             die("The KSK '{}...{}' had bad Base64.".format(\
                 this_ksk_record[0:15], this_ksk_record[-15:]))
-        for (count, this_trust_anchor) in enumerate(valid_trust_anchors):
+        for this_trust_anchor in valid_trust_anchors:
             hash_as_hex = dnskey_to_hex_of_hash(this_ksk_record, this_trust_anchor["DigestType"])
             if hash_as_hex == this_trust_anchor["Digest"]:
-                print("Trust anchor {} matched KSK '{}...{}'".format(count,\
+                print("Trust anchor {} matched KSK '{}...{}'".format(this_trust_anchor["original_index"],\
                     this_ksk_record["k"][0:15], this_ksk_record["k"][-15:]))
                 matched_ksks.append(this_ksk_record)
                 break  # Don't check more trust anchors against this KSK
